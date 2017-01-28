@@ -1,0 +1,72 @@
+---
+title: "Bollinger COM 521 HW 4"
+author: "Beth Bollinger"
+date: "1/19/2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+COS.Statistics.Top5000.Pages<- read.csv("~/Desktop/Winter 2017/COM 521/bbollinger-com521/COS-Statistics-Mobile_Sessions.csv")
+COS.Statistics.Mobile_Sessions <- read.csv("~/Desktop/Winter 2017/COM 521/bbollinger-com521/COS-Statistics-Top5000-Pages.csv")
+```
+##PC2. Load both datasets into R as separate data frames. Explore the data to get a sense of the structure of the data. What are the columns, rows, missing data, etc? Write code to take (and then check/look at) several random subsamples of the data.
+```{r}
+set1 <- COS.Statistics.Mobile_Sessions
+set2 <- COS.Statistics.Top5000.Pages
+
+dim(set1) #looking at the dataset
+dim(set2)
+head(set1) #looking at the dataset
+head(set2)
+missing1 <- is.na(set1) #finding and looking at the missing data
+as.numeric(missing1)
+sum(length(which(is.na(set1))))
+missing2 <- is.na(set2)
+as.numeric(missing2)
+sum(length(which(is.na(set2))))
+
+set1[sample(nrow(set1), 10), ] #do this multiple times, with a different number in the 10 place, to get a new sample and sample size from this data
+set2[sample(nrow(set2), 10), ]
+```
+I first created a new dataset for each of these, with shorter names, in order to type them in faster. Then, I looked at the dimentions and tables for each dataset. After, I looked at how many items were missing, both in T/F and numeric format. Finally, I took a sample of each dataset - a sample size of 10. In the code, the 10 could be replaced with any number in order to pull more samples with different sizes and numbers. 
+
+##PC3. Using the top 5000 dataset, create a new data frame that one column per month (as described in the data) and a second column is the total number of views made to all pages in the dataset over that month.
+```{r}
+newdfset2 <- set2[, c(2,8),]
+tapply(newdfset2$Pageviews, newdfset2$Month, sum)
+sum.views <- tapply(newdfset2$Pageviews, newdfset2$Month, sum)
+sum.set2 <- data.frame(Month1=names(sum.views), Total.Views=sum.views)
+```
+I created a new data frame by selecting the second column (total pages viewed) by the eigth colum (month viewed). Then, I used tapply in order to sum the Page views for each month (by year).  
+
+##PC4. Using the mobile dataset, create a new data frame where one column is each month described in the data and the second is a measure (estimate?) of the total number of views made by mobiles (all platforms) over each month. This will will involve at least two steps since total views are included. You'll need to first use the data there to create a measure of the total views per platform.
+```{r}
+newdfset1 <- set1[, c(1,2,8),]
+tapply(newdfset1$Sessions, newdfset1$Month, sum)
+sum.views1 <- tapply(newdfset1$Sessions, newdfset1$Month, sum)
+sum.names1 <- tapply(newdfset1$Sessions, newdfset1$Operating_System, sum)
+sum.set1 <- data.frame(Month=names(sum.views1), Total.Views=sum.views1)
+```
+I created a new data frame by selecting the first column (operating system) by the second colum (sessions), and also the eighth column (month). Then, I used tapply in order to total the sum of the Page views for each month (by year).
+
+##PC5. Merge your two datasets together into a new dataset with columns for each month, total views (across the top 5000 pages) and total mobile views. Are there are missing data? Can you tell why?
+```{r}
+merge(sum.set1, sum.set2, by.x="Month", by.y="Month")
+merge(sum.set1, sum.set2, by.x="Month", by.y="Month1", all.x=TRUE, all.y=TRUE)
+```
+I first merged the datasets with the first line of code, noticing that it removed the lines of data that were NA. I believe everything that was NA was automatically removed by R. So, I then went and added that all values were true in the second line of code above, in order to capture even missing data. 
+
+##PC6. Create a new column in your merged dataset that describes your best estimate of the proportion (or percentage, if you really must!) of views that comes from mobile. Be able to talk about the assumptions you've made here. Make sure that date, in this final column, is a date or datetime object in R.
+```{r}
+m.merge <- merge(sum.set1, sum.set2, by.x="Month", by.y="Month", all.x=TRUE, all.y=TRUE)
+m.merge$percentage <- (m.merge$Total.Views.y/m.merge$Total.Views.x)*100
+```
+I don't actually think this answer is write, but I tried my best to find the percentage for each column, which you can see is represented here under each of the dates.
+
+##PC7. Graph this over time and be ready to describe: (a) your best estimate of the proportion of views from mobiles to the Seattle City website over time and (b) an indication of whether it's going up or down.
+```{r}
+library(ggplot2)
+ggplot(data = m.merge) + geom_point() + aes(x=Month, y=percentage)
+```
+It looks like there is one major outlier, way up there. It looks like things are remaining pretty consistent in general. 
